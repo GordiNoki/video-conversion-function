@@ -1,0 +1,4 @@
+.env
+pack.zip
+dist
+node_modules

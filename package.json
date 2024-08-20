@@ -1,0 +1,14 @@
+{
+  "scripts": {
+    "postinstall": "sh ./install-ffmpeg.sh",
+    "build": "tsc",
+    "pack": "del pack.zip && 7z a -tzip pack.zip dist package.json package-lock.json install-ffmpeg.sh"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.633.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.4.1",
+    "typescript": "^5.5.4"
+  }
+}
