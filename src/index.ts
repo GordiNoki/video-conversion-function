@@ -142,7 +142,7 @@ async function runFFMpeg(inFilePath: string, outFilePath: string) {
       "-i",
       inFilePath,
       "-vf",
-      "scale='if(gt(iw/ih,16/9),1280,-2)':'if(gt(iw/ih,16/9),-2,720)'",
+      "scale='if(gt(iw/ih,16/9),1280,-2)':'if(gt(iw/ih,16/9),-2,1280)'",
       "-c:v",
       "libvpx-vp9",
       "-deadline",
