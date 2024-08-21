@@ -12,4 +12,5 @@ export const config = {
   resultPrefix: envVar("RESULT_PREFIX"),
   awsKeyId: envVar("AWS_KEY_ID"),
   awsSecretKey: envVar("AWS_SECRET_KEY"),
+  bucketMountName: envVar("BUCKET_MOUNT_NAME", true),
 };

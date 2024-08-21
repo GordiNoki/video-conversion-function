@@ -1,4 +1,5 @@
 import { createReadStream, createWriteStream } from "fs";
+import { stat } from "fs/promises";
 import { spawn } from "child_process";
 import {
   S3Client,
@@ -37,17 +38,50 @@ export async function handler(event: HandlerEvent, _ctx: any) {
 
 async function action(bucketId: string, objectId: string) {
   const workFileName = objectId.split("/").at(-1)!;
-  const resFileName =
-    workFileName.split(".").slice(0, -1).join(".") + ".webm";
+  const resFileName = workFileName.split(".").slice(0, -1).join(".") + ".webm";
 
-  await downloadFile(bucketId, objectId, "/tmp/" + workFileName);
-  await runFFMpeg("/tmp/" + workFileName, "/tmp/" + resFileName);
-  await uploadFile(
-    bucketId,
-    config.resultPrefix + resFileName,
-    "/tmp/" + resFileName
-  );
+  let workFilePath = "/tmp/" + workFileName;
+  let resFilePath = "/tmp/" + resFileName;
+
+  const useBucketMount = await checkBucketMount(objectId, resFileName);
+  if (useBucketMount) {
+    console.log("Using bucket mount.");
+    workFilePath = useBucketMount.workFile;
+    resFilePath = useBucketMount.resFile;
+  }
+
+  if (!useBucketMount) {
+    await downloadFile(bucketId, objectId, workFilePath);
+  }
+
+  await runFFMpeg(workFilePath, resFilePath);
+
+  if (!useBucketMount) {
+    await uploadFile(bucketId, config.resultPrefix + resFileName, resFilePath);
+  }
+
   console.log(objectId + " is done.");
+}
+
+async function checkBucketMount(objectId: string, resFileName: string) {
+  if (!config.bucketMountName) return false;
+
+  const bucketMount = await stat(
+    "/function/storage/" + config.bucketMountName
+  ).catch(() => null);
+
+  if (!bucketMount || !bucketMount.isDirectory()) return false;
+
+  const targetFile = await stat(
+    `/function/storage/${config.bucketMountName}/${objectId}`
+  ).catch(() => null);
+
+  return !!targetFile
+    ? {
+        workFile: `/function/storage/${config.bucketMountName}/${objectId}`,
+        resFile: `/function/storage/${config.bucketMountName}/${config.resultPrefix}${resFileName}`,
+      }
+    : null;
 }
 
 async function downloadFile(
